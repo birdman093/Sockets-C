@@ -45,10 +45,11 @@ int main(int argc, char *argv[])
 
     int ret_Bind = bind(sd_listen, (struct sockaddr *)&sd_address, sizeof(sd_address));
     if (ret_Bind == -1) {
-        printf("Error binding to Port\n");
-        return EXIT_FAILURE;
+        perror("Error binding to Port\n");
+        exit(1);
     }
 
+    // children listen on same socket for requests
     int ret_Listen = listen(sd_listen, 5);
     if (ret_Listen == -1) {
         printf("Error Listening\n");
@@ -70,6 +71,7 @@ int main(int argc, char *argv[])
     
     //Child Processes to accept incoming requests as server and process data
     if (newProcess == 0) {
+
         // Accept clients to the server and send to pooled processes
         int connectSocket;
         struct sockaddr_in clientAddress;
@@ -93,6 +95,7 @@ int main(int argc, char *argv[])
                             ntohs(clientAddress.sin_addr.s_addr),
                             ntohs(clientAddress.sin_port));
 
+            /*
             // get IP address from client and store in IP struct
             struct in_addr ipAdd;
             ipAdd.s_addr = ntohs(clientAddress.sin_addr.s_addr);  //convert to host byte order and place in IP address
@@ -109,7 +112,8 @@ int main(int argc, char *argv[])
                 close(connectSocket);
                 continue;
             }
-
+            */
+            
             // Read the client's message from the socket
             memset(buffer, '\0', BUFFSIZE);
             charsRead = recv(connectSocket, buffer, BUFFSIZE-1, 0); 
@@ -128,8 +132,10 @@ int main(int argc, char *argv[])
 
             close(connectSocket);
         }
+        close(sd_listen);
     }
     else {
+        close(sd_listen);
         pause();
     }
 
