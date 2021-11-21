@@ -17,9 +17,7 @@
 #define MAXCONN 5
 #define ENC_CLIENT "enc_client"
 #define BUFFSIZE 256
-//#define MAXHOSTCHAR 1024
-
-
+#define ENC_SERVER_STRING "enc_server"
 
 int main(int argc, char *argv[]) 
 {
@@ -95,40 +93,21 @@ int main(int argc, char *argv[])
                             ntohs(clientAddress.sin_addr.s_addr),
                             ntohs(clientAddress.sin_port));
 
-            /*
-            // get IP address from client and store in IP struct
-            struct in_addr ipAdd;
-            ipAdd.s_addr = ntohs(clientAddress.sin_addr.s_addr);  //convert to host byte order and place in IP address
-            char * clientDotted = calloc(strlen(inet_ntoa(ipAdd))+1, sizeof(char));
-            strcpy(clientDotted, inet_ntoa(ipAdd));
-            size_t ipSize = sizeof(ipAdd);
-            
-            // check connection is enc_client by getting client name using gethostbyaddr()
-            struct hostent *hostptr; 
-            hostptr = gethostbyaddr(&ipAdd, ipSize, AF_INET);
-            printf("host Name: %s\n", hostptr->h_name);
-            if (strcmp(hostptr->h_name, ENC_CLIENT)!=0) {
-                perror("ERROR ON HOST NAME");
-                close(connectSocket);
-                continue;
+            // send client server name for client error checking
+            charsRead = send(connectSocket, ENC_SERVER_STRING, 11, 0); 
+            if (charsRead < 0){
+                perror("ERROR writing to socket");
             }
-            */
-            
+
+            /*
             // Read the client's message from the socket
             memset(buffer, '\0', BUFFSIZE);
             charsRead = recv(connectSocket, buffer, BUFFSIZE-1, 0); 
             if (charsRead < 0){
                 perror("ERROR reading from socket");
             }
-            printf("SERVER: I received this from the client: \"%s\"\n", buffer);
-
-            // process data
-
-            // send data back
-            charsRead = send(connectSocket, "I am the server, and I got your message", 39, 0); 
-            if (charsRead < 0){
-                perror("ERROR writing to socket");
-            }
+            printf("SERVER: Starting Communication with from the client: \"%s\"\n", buffer);
+            */
 
             close(connectSocket);
         }

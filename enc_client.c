@@ -17,12 +17,14 @@
 #define MAXCONN 5
 #define ENC_CLIENT "enc_client"
 #define ENC_SERVER "localhost"
+#define ENC_SERVER_STRING "enc_server"
 #define BUFFSIZE 256
 #define TEXT_INPUT 1
 #define KEY_INPUT 2
 #define PORT_INPUT 3
 
 int enc_client_process(int, int); 
+int enc_client_send(int, int);
 
 int main(int argc, char *argv[]) 
 {
@@ -60,8 +62,20 @@ int main(int argc, char *argv[])
         perror("CLIENT: ERROR connecting");
     }
 
-    // get info from plaintext, and process data to readable format
+    //Error Checking:  check server name
     char buffer[BUFFSIZE];
+    memset(buffer, '\0', sizeof(buffer));
+    int charsRead;
+    charsRead = recv(sd_client, buffer, sizeof(buffer) - 1, 0); 
+    if (charsRead < 0){
+        perror("CLIENT: ERROR reading from socket");
+    }
+    if (strcmp(buffer, ENC_SERVER_STRING) != 0) {
+        perror("CLIENT: INVALID SERVER");
+        exit(2);
+    }
+
+    // Open plaintext and keyfile, check for any errors
     int fd_plaintext = open(argv[TEXT_INPUT],O_RDONLY,0);
     if (fd_plaintext < 0) {
         perror("CLIENT: ERROR, reading plain-text");
@@ -74,6 +88,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    // Check plaintext and keyfile for any invalid characters or if keyfile is not long enough
     int ret_process = enc_client_process(fd_plaintext, fd_keyfile);
     if (ret_process < 0) {
         perror("CLIENT: ERROR, processing plaintext and keytext files");
@@ -82,34 +97,25 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    //loop through until buffer is empty, load 255 characters
-    ssize_t nread;
-    int charsWritten;
-    while ((nread = read(fd_plaintext, buffer, BUFFSIZE-1)) > 0) {
-        // send info to server
-        charsWritten = send(sd_client, buffer, strlen(buffer), 0);
-        if (charsWritten < 0) {
-            perror("CLIENT: ERROR writing to socket");
-        }
-        if (charsWritten < strlen(buffer)){
-            printf("CLIENT: WARNING: Not all data written to socket!\n");
-        }
-        memset(buffer, '\0', sizeof(buffer));
+    // Send key and plaintext to server, send key in between and at end to signify start and end
+    int ret_send_pt = enc_client_send(int fd_plaintext, int sd_client); 
+    if (ret_send_pt < 0){
+        exit(1);
     }
-    close(fd_plaintext);
-    close(fd_keyfile);
+ 
+    int ret_send_key = enc_client_send(int fd_keyfile, int sd_client); 
+    if (ret_send_key < 0){
+        exit(1);
+    }
 
-    // add termination message
-
-    //receive info from server
+    // receive processed data from server  -- search for & to find stop signal
     memset(buffer, '\0', sizeof(buffer));
     int charsRead;
     charsRead = recv(sd_client, buffer, sizeof(buffer) - 1, 0); 
     if (charsRead < 0){
         perror("CLIENT: ERROR reading from socket");
+        exit(1);
     }
-    printf("CLIENT: I received this from the server: \"%s\"\n", buffer);
-
 
     close(sd_client);    
     return EXIT_SUCCESS;

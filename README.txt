@@ -61,3 +61,22 @@ void handle_USR1(int signo) {
     // handler for pooled processes
     pause();
 }
+
+            /*
+            // get IP address from client and store in IP struct
+            struct in_addr ipAdd;
+            ipAdd.s_addr = ntohs(clientAddress.sin_addr.s_addr);  //convert to host byte order and place in IP address
+            char * clientDotted = calloc(strlen(inet_ntoa(ipAdd))+1, sizeof(char));
+            strcpy(clientDotted, inet_ntoa(ipAdd));
+            size_t ipSize = sizeof(ipAdd);
+            
+            // check connection is enc_client by getting client name using gethostbyaddr()
+            struct hostent *hostptr; 
+            hostptr = gethostbyaddr(&ipAdd, ipSize, AF_INET);
+            printf("host Name: %s\n", hostptr->h_name);
+            if (strcmp(hostptr->h_name, ENC_CLIENT)!=0) {
+                perror("ERROR ON HOST NAME");
+                close(connectSocket);
+                continue;
+            }
+            */
