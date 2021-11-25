@@ -22,6 +22,8 @@
 #define TEXT_INPUT 1
 #define KEY_INPUT 2
 #define PORT_INPUT 3
+#define ERROR_KEY '!'
+#define DELIM_KEY '@'
 
 int enc_client_process(int, int); 
 int enc_client_send(int, int);
@@ -37,14 +39,12 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    // client socket
+    // Client Socket and Addressing
     int sd_client = socket(AF_INET, SOCK_STREAM, 0);
     if (sd_client == -1) {
         printf("CLIENT: ERROR, creating Socket\n");
         return EXIT_FAILURE;
     }
-
-    // client socket address struct
     struct sockaddr_in clientAddress;
     memset((char*) &clientAddress, '\0', sizeof(clientAddress));
     clientAddress.sin_family = AF_INET;
@@ -56,26 +56,42 @@ int main(int argc, char *argv[])
     }
     memcpy((char*) &clientAddress.sin_addr.s_addr, hostInfo->h_addr_list[0], hostInfo->h_length);
 
-    // connect to server
+    // Create connection to ENC_Server socket
     int ret_Conn = connect(sd_client, (struct sockaddr*)&clientAddress, sizeof(clientAddress));
     if (ret_Conn < 0) {
         perror("CLIENT: ERROR connecting");
     }
 
-    //Error Checking:  check server name
+    // Server Connection Validation Receive:  check server name
     char buffer[BUFFSIZE];
     memset(buffer, '\0', sizeof(buffer));
-    int charsRead;
-    charsRead = recv(sd_client, buffer, sizeof(buffer) - 1, 0); 
-    if (charsRead < 0){
-        perror("CLIENT: ERROR reading from socket");
+    int charsRead; int charsWritten;
+    charsRead = recv(sd_client, buffer, sizeof(buffer) - 1, 0);
+    if (charsRead < 0 ){
+        perror("CLIENT: ERROR reading server validation from server socket");
+        memset(buffer, '\0', sizeof(buffer));
+        buffer[0] = ERROR_KEY;
+        charsWritten = send(sd_client, buffer, strlen(buffer), 0);  
+        exit(2);
     }
-    if (strcmp(buffer, ENC_SERVER_STRING) != 0) {
+    else if (strcmp(buffer, ENC_SERVER_STRING) != 0) {
         perror("CLIENT: INVALID SERVER");
+        memset(buffer, '\0', sizeof(buffer));
+        buffer[0] = ERROR_KEY;
+        charsWritten = send(sd_client, buffer, strlen(buffer), 0);  
         exit(2);
     }
 
-    // Open plaintext and keyfile, check for any errors
+    //Server Connection Validation Send: Confirm Acceptable Servercheck server name
+    memset(buffer, '\0', sizeof(buffer));
+    buffer[0] = DELIM_KEY;
+    charsWritten = send(sd_client, buffer, strlen(buffer), 0);
+    if (charsWritten < 0) {
+            perror("CLIENT: ERROR writing server validation from server socket");
+            exit(2);
+    }
+
+    // Plain Text and Key File Validation: Open files
     int fd_plaintext = open(argv[TEXT_INPUT],O_RDONLY,0);
     if (fd_plaintext < 0) {
         perror("CLIENT: ERROR, reading plain-text");
@@ -88,7 +104,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    // Check plaintext and keyfile for any invalid characters or if keyfile is not long enough
+    // Plain Text and Key File Validation: Check for invalid characters, key file length greater than plaintext
     int ret_process = enc_client_process(fd_plaintext, fd_keyfile);
     if (ret_process < 0) {
         perror("CLIENT: ERROR, processing plaintext and keytext files");
@@ -97,20 +113,19 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    // Send key and plaintext to server, send key in between and at end to signify start and end
-    int ret_send_pt = enc_client_send(int fd_plaintext, int sd_client); 
+    // Plain Text and Key File Validation: Send key and plaintext to server, send DELIM_KEY in between and at end to 
+    // signify start and end
+    int ret_send_pt = enc_client_send(fd_plaintext, sd_client); 
     if (ret_send_pt < 0){
         exit(1);
     }
- 
-    int ret_send_key = enc_client_send(int fd_keyfile, int sd_client); 
+    int ret_send_key = enc_client_send(fd_keyfile, sd_client); 
     if (ret_send_key < 0){
         exit(1);
     }
 
     // receive processed data from server  -- search for & to find stop signal
     memset(buffer, '\0', sizeof(buffer));
-    int charsRead;
     charsRead = recv(sd_client, buffer, sizeof(buffer) - 1, 0); 
     if (charsRead < 0){
         perror("CLIENT: ERROR reading from socket");

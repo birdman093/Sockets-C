@@ -14,11 +14,12 @@
 #include <sys/wait.h>
 
 #define BUFFSIZE 256
-#define STOP '!'
+#define ERROR_KEY '!'
+#define DELIM_KEY '@'
 
 int enc_client_send(int fd, int socket) 
 {
-    //read plaintext into buffer and send to server
+    //read text into buffer and send to server
     ssize_t nread;
     int charsWritten;
     char buffer[BUFFSIZE];
@@ -27,7 +28,7 @@ int enc_client_send(int fd, int socket)
         charsWritten = send(socket, buffer, strlen(buffer), 0);
         if (charsWritten < 0) {
             perror("CLIENT: ERROR writing to socket");
-            return -1
+            return -1;
         }
         if (charsWritten < strlen(buffer)){
             // add write to stdout
@@ -37,10 +38,10 @@ int enc_client_send(int fd, int socket)
     }
     close(fd);
     // send break now
-    charsWritten = send(socket, '!', 1, 0);
+    charsWritten = send(socket, ERROR_KEY, 1, 0);
     if (charsWritten < 0) {
         perror("CLIENT: ERROR writing to socket");
-        return -1
+        return -1;
     }
     if (charsWritten < strlen(buffer)){
         // add write to stdout

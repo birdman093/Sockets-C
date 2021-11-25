@@ -18,6 +18,8 @@
 #define ENC_CLIENT "enc_client"
 #define BUFFSIZE 256
 #define ENC_SERVER_STRING "enc_server"
+#define ERROR_KEY '!'
+#define DELIM_KEY '@'
 
 int main(int argc, char *argv[]) 
 {
@@ -30,6 +32,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    // Server Socket and Addressing
     int sd_listen = socket(AF_INET, SOCK_STREAM, 0);
     if (sd_listen == -1) {
         printf("Error creating Socket\n");
@@ -41,20 +44,21 @@ int main(int argc, char *argv[])
     sd_address.sin_addr.s_addr = INADDR_ANY;
     sd_address.sin_port = htons(atoi(argv[1]));
 
+    // bind socket to input port
     int ret_Bind = bind(sd_listen, (struct sockaddr *)&sd_address, sizeof(sd_address));
     if (ret_Bind == -1) {
         perror("Error binding to Port\n");
         exit(1);
     }
 
-    // children listen on same socket for requests
+    // all children listen on same socket for requests.  Initialize before forking.
     int ret_Listen = listen(sd_listen, 5);
     if (ret_Listen == -1) {
         printf("Error Listening\n");
         return EXIT_FAILURE;
     }
 
-    // Create pool of 5 child processes that will listen and accept incoming client requests
+    // Create pool of 5 child processes from the parent process that will listen and accept incoming client requests
     pid_t newProcess = -5;
     for (int i = 0; i < MAXCONN; i++) {
         newProcess = fork();
@@ -62,7 +66,7 @@ int main(int argc, char *argv[])
             printf("Invalid Fork--New Process did not fork\n");
             return EXIT_FAILURE;
         } else if (newProcess == 0) {
-            //child process
+            //child process does not fork(), break from loop
             break;
         }
     }
@@ -70,14 +74,13 @@ int main(int argc, char *argv[])
     //Child Processes to accept incoming requests as server and process data
     if (newProcess == 0) {
 
-        // Accept clients to the server and send to pooled processes
+        // Initialize client info and buffer info for receiving from client
         int connectSocket;
         struct sockaddr_in clientAddress;
         socklen_t clientSize = sizeof(clientAddress);
-
-        // buffer info
         char buffer[BUFFSIZE];
         int charsRead;
+        int charsWritten;
 
         while(1){
             
@@ -93,11 +96,24 @@ int main(int argc, char *argv[])
                             ntohs(clientAddress.sin_addr.s_addr),
                             ntohs(clientAddress.sin_port));
 
-            // send client server name for client error checking
-            charsRead = send(connectSocket, ENC_SERVER_STRING, 11, 0); 
-            if (charsRead < 0){
-                perror("ERROR writing to socket");
+            // Server Connection Validation Send: send client server name for client error checking
+            charsWritten = send(connectSocket, ENC_SERVER_STRING, 11, 0); 
+            if (charsWritten < 0){
+                perror("ERROR writing validation message to socket");
+                close(connectSocket);
+                continue;
             }
+
+            // Server Connection Validation Receive: close socket if invalid and continue accepting new clients
+            memset(buffer, '\0', BUFFSIZE);
+            charsRead = recv(connectSocket, buffer, BUFFSIZE-1, 0); 
+            if (charsRead < 0 || buffer[0] == '!') {
+                perror("ERROR receiving validation message from socket");
+                close(connectSocket);
+                continue;
+            }
+
+            
 
             /*
             // Read the client's message from the socket
