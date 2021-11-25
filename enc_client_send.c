@@ -16,6 +16,7 @@
 #define BUFFSIZE 256
 #define ERROR_KEY '!'
 #define DELIM_KEY '@'
+#define DELIM_STR "@"
 
 int enc_client_send(int fd, int socket) 
 {
@@ -30,22 +31,14 @@ int enc_client_send(int fd, int socket)
             perror("CLIENT: ERROR writing to socket");
             return -1;
         }
-        if (charsWritten < strlen(buffer)){
-            // add write to stdout
-            printf("CLIENT: WARNING: Not all data written to socket!\n");
-        }
         memset(buffer, '\0', sizeof(buffer));
     }
     close(fd);
-    // send break now
-    charsWritten = send(socket, ERROR_KEY, 1, 0);
+    // Send Delimiter to signify break
+    charsWritten = send(socket, DELIM_STR, 1, 0);
     if (charsWritten < 0) {
-        perror("CLIENT: ERROR writing to socket");
+        perror("CLIENT: ERROR sending stop message to socket");
         return -1;
-    }
-    if (charsWritten < strlen(buffer)){
-        // add write to stdout
-        printf("CLIENT: WARNING: Not all data written to socket!\n");
     }
     return 0;
     

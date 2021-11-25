@@ -24,8 +24,9 @@
 #define PORT_INPUT 3
 #define ERROR_KEY '!'
 #define DELIM_KEY '@'
+#define DELIM_STR "@"
 
-int enc_client_process(int, int); 
+int enc_client_process(int, int, int); 
 int enc_client_send(int, int);
 
 int main(int argc, char *argv[]) 
@@ -105,16 +106,22 @@ int main(int argc, char *argv[])
     }
 
     // Plain Text and Key File Validation: Check for invalid characters, key file length greater than plaintext
-    int ret_process = enc_client_process(fd_plaintext, fd_keyfile);
+    int ret_process = enc_client_process(fd_plaintext, fd_keyfile, sd_client);
     if (ret_process < 0) {
         perror("CLIENT: ERROR, processing plaintext and keytext files");
         close(fd_plaintext);
         close(fd_keyfile);
+        close(sd_client); 
         exit(1);
     }
 
-    // Plain Text and Key File Validation: Send key and plaintext to server, send DELIM_KEY in between and at end to 
-    // signify start and end
+    // Plain Text and Key File Validation: Send key and plaintext to server, send DELIM_KEY to start, in between,  
+    // at end to signify change of input
+    charsWritten = send(sd_client, DELIM_STR, 1, 0);
+    if (charsWritten < 0) {
+        perror("CLIENT: ERROR sending stop message to socket");
+        return -1;
+    }
     int ret_send_pt = enc_client_send(fd_plaintext, sd_client); 
     if (ret_send_pt < 0){
         exit(1);
@@ -126,11 +133,27 @@ int main(int argc, char *argv[])
 
     // receive processed data from server  -- search for & to find stop signal
     memset(buffer, '\0', sizeof(buffer));
-    charsRead = recv(sd_client, buffer, sizeof(buffer) - 1, 0); 
-    if (charsRead < 0){
-        perror("CLIENT: ERROR reading from socket");
-        exit(1);
+    bool stopSignal = false;
+    while (!stopSignal) {
+        charsRead = recv(sd_client, buffer, BUFFSIZE - 1, 0);
+        if (charsRead < 0){
+            perror("CLIENT: ERROR reading from socket");
+            exit(1);
+        } 
+        printf("%s",buffer);
+
+        // check for stop Signal
+        for (int i = 0; i < strlen(buffer); i++) {
+            if (buffer[i] == DELIM_KEY) {
+                stopSignal = true; 
+            }
+        }
+
+        memset(buffer, '\0', sizeof(buffer));
     }
+    printf("\n");
+    
+    
 
     close(sd_client);    
     return EXIT_SUCCESS;

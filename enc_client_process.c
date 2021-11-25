@@ -16,15 +16,18 @@
 #define BUFFSIZE 256
 #define MIN_ASCII 65
 #define MAX_CHARS 27
-#define MAX_ASCII 91
+#define MAX_ASCII 90
 #define ASCII_SPACE 32
 #define MAX_ASCII_CHAR 'Z'
 #define MIN_ASCII_CHAR 'A'
 #define ASCII_CHAR_SPACE ' '
 #define ASCII_CHAR_NL '\n'
+#define DELIM_KEY '@'
+#define DELIM_STR "@"
+#define ZERO_ASCII 48
 
 // return size of file, return -1 on error
-int enc_client_process(int fd_txt, int fd_key) 
+int enc_client_process(int fd_txt, int fd_key, int socket) 
 {
 
     // get plaintext file size
@@ -78,7 +81,28 @@ int enc_client_process(int fd_txt, int fd_key)
     lseek(fd_key,0,SEEK_SET);
 
 
-    return ret_txt;
+    //DEBUGGING NEED TO ADD ITOA
+    // send information to server
+    memset(buffChk, '\0', BUFFSIZE);
+    buffChk[0] = DELIM_KEY;
+    int len = 1;
+    sprintf(&buffChk[1], "%i", ret_txt);
+    len = strlen(buffChk) + 1;
+    strcpy(&buffChk[len], DELIM_STR);
+    len += 1;
+    sprintf(&buffChk[len], "%i",ret_key);
+    len = strlen(buffChk) + 1;
+    strcpy(&buffChk[len], DELIM_STR);
+
+    int charsWritten = send(socket, buffChk, strlen(buffChk), 0);
+    if (charsWritten < 0) {
+        perror("CLIENT: ERROR writing to socket");
+        return -1;
+    }
+
+    return 0;
 }
+
+
 
 

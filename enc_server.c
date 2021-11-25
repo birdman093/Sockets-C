@@ -13,13 +13,15 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-
 #define MAXCONN 5
 #define ENC_CLIENT "enc_client"
 #define BUFFSIZE 256
 #define ENC_SERVER_STRING "enc_server"
 #define ERROR_KEY '!'
 #define DELIM_KEY '@'
+#define DELIM_STR "@"
+
+char enc_server_encrypt(char, char);
 
 int main(int argc, char *argv[]) 
 {
@@ -81,6 +83,14 @@ int main(int argc, char *argv[])
         char buffer[BUFFSIZE];
         int charsRead;
         int charsWritten;
+        int andCount;
+        int plainSize;
+        int keySize;
+        char *keyBuffer;
+        char *plainBuffer;
+        int plainIdx;
+        int keyIdx;
+        int plainRemain;
 
         while(1){
             
@@ -107,24 +117,82 @@ int main(int argc, char *argv[])
             // Server Connection Validation Receive: close socket if invalid and continue accepting new clients
             memset(buffer, '\0', BUFFSIZE);
             charsRead = recv(connectSocket, buffer, BUFFSIZE-1, 0); 
-            if (charsRead < 0 || buffer[0] == '!') {
+            if (charsRead < 0 || buffer[0] == ERROR_KEY) {
                 perror("ERROR receiving validation message from socket");
                 close(connectSocket);
                 continue;
             }
+            // TESTING NOTES: & should be received by client here
 
-            
-
-            /*
-            // Read the client's message from the socket
+            // Keyfile/ PlainText File Validation: Receive file sizes from client, allocate buffers
             memset(buffer, '\0', BUFFSIZE);
             charsRead = recv(connectSocket, buffer, BUFFSIZE-1, 0); 
-            if (charsRead < 0){
-                perror("ERROR reading from socket");
+            andCount = 0;
+            plainSize = 0;
+            keySize = 0;
+            for (int i = 0; i < strlen(buffer); i++) {
+                if (buffer[i] == DELIM_KEY) {
+                    andCount++;
+                } else if (andCount == 1) {
+                    plainSize = plainSize * 10 + atoi(&buffer[i]);
+                } else if (andCount == 2) {
+                    keySize = keySize * 10 +atoi(&buffer[i]);
+                }
             }
-            printf("SERVER: Starting Communication with from the client: \"%s\"\n", buffer);
-            */
+            keyBuffer = calloc(keySize + 3, sizeof(char));
+            plainBuffer = calloc(plainSize + 3, sizeof(char));
 
+            // DataTransfer Receive:  Receive plaintext files and keyfiles with delimiters
+            memset(buffer, '\0', BUFFSIZE);
+            charsRead = recv(connectSocket, buffer, BUFFSIZE-1, 0); 
+            andCount = 0; plainIdx = 0; keyIdx = 0;
+            charsWritten = 1;
+            while (charsWritten > 0 && andCount < 3) {
+                charsRead = recv(connectSocket, buffer, BUFFSIZE-1, 0); 
+                for (int i = 0; i < strlen(buffer); i++) {
+                    if (buffer[i] == DELIM_KEY) {
+                        andCount++;
+                    } else if (andCount == 1) {
+                        plainBuffer[plainIdx] = buffer[i];
+                        plainIdx++; 
+                    } else if (andCount == 2) {
+                        keyBuffer[plainIdx] = buffer[i];
+                        keyIdx++; 
+                    }
+                }
+            } 
+
+            // Process Data: Encryption
+            for (int i = 0; i < strlen(plainBuffer); i++) {
+                plainBuffer[i] = enc_server_encrypt(plainBuffer[i], keyBuffer[i]);
+            }
+
+            //Process Data: Send Processed info back to client, send DELIM_KEY at end
+            plainIdx = 0;
+            plainRemain = plainSize;
+            while (plainIdx < plainSize) {
+                memset(buffer, '\0', BUFFSIZE);
+                if (plainRemain > BUFFSIZE-1) {
+                    strncpy(buffer, &plainBuffer[plainIdx], BUFFSIZE-1);
+                    plainRemain -= BUFFSIZE -1;
+                } else {
+                    strncpy(buffer, &plainBuffer[plainIdx], plainRemain);
+                    plainRemain -= plainRemain;
+                }
+                charsWritten = send(connectSocket, buffer, BUFFSIZE-1, 0);
+                if (charsWritten < 0){
+                    perror("ERROR writing validation message to socket");
+                    break;
+                } 
+            }
+            charsWritten = send(connectSocket, DELIM_STR, 1, 0);
+            if (charsWritten < 0){
+                perror("ERROR sending stop message to socket");
+            } 
+
+        
+            free(keyBuffer);
+            free(plainBuffer);
             close(connectSocket);
         }
         close(sd_listen);
