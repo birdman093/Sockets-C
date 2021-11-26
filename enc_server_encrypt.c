@@ -36,9 +36,15 @@ char enc_server_encrypt(char plainChar, char keyChar)
         inpChar = (int)plainChar - MIN_ASCII;
     }
 
-    // encrypt
+    // encrypt to number from 0 to 27
     inpChar += (int)keyChar;
     inpChar = inpChar % MAX_CHARS;
+
+    // convert to ASCII character
+    inpChar += MIN_ASCII;
+    if (inpChar > MAX_ASCII) {
+        inpChar = ASCII_SPACE;
+    }
     buffConv = (char)inpChar;
     return buffConv;
 }

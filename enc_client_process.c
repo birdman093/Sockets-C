@@ -27,15 +27,14 @@
 #define ZERO_ASCII 48
 
 // return size of file, return -1 on error
-int enc_client_process(int fd_txt, int fd_key, int socket) 
+int enc_client_process(int fd_plain, int fd_key, int fd_socket) 
 {
 
     // get plaintext file size
-    int ret_txt;
-    struct stat txt;
-    fstat(fd_txt, &txt);
-    printf("%d",(int)txt.st_size);
-    ret_txt = txt.st_size;
+    int ret_plain;
+    struct stat plain;
+    fstat(fd_plain, &plain);
+    ret_plain = plain.st_size;
 
     // get key file size
     int ret_key;
@@ -43,7 +42,7 @@ int enc_client_process(int fd_txt, int fd_key, int socket)
     fstat(fd_key, &key);
     ret_key = key.st_size;
 
-    if (ret_key < ret_txt) {
+    if (ret_key < ret_plain) {
         return -1;
     }
 
@@ -51,18 +50,18 @@ int enc_client_process(int fd_txt, int fd_key, int socket)
     char buffChk[BUFFSIZE];
     ssize_t nread2;
     int byteCounter = 0; 
-    while ((nread2 = read(fd_txt, buffChk, BUFFSIZE-1)) > 0) {
+    while ((nread2 = read(fd_plain, buffChk, BUFFSIZE-1)) > 0) {
         for (int i = 0; i < strlen(buffChk); i++) {
             byteCounter ++;
             if (buffChk[i] > MAX_ASCII_CHAR || (buffChk[i] < MIN_ASCII_CHAR && buffChk[i] != ASCII_CHAR_SPACE)) {
                 //if at end of text file and hit newline that is acceptable
-                if (buffChk[i] != ASCII_CHAR_NL && byteCounter != ret_txt-1) {
+                if (buffChk[i] != ASCII_CHAR_NL && byteCounter != ret_plain-1) {
                     return -1; 
                 }
             }
         }
     }
-    lseek(fd_txt,0,SEEK_SET);
+    lseek(fd_plain,0,SEEK_SET);
 
     // sort through key text characters for illegal characters
     byteCounter = 0;
@@ -72,7 +71,7 @@ int enc_client_process(int fd_txt, int fd_key, int socket)
             if (buffChk[i] > MAX_ASCII_CHAR || (buffChk[i] < MIN_ASCII_CHAR && buffChk[i] != ASCII_CHAR_SPACE)) {
                 //if at end of text file and hit newline that is acceptable
                 if (buffChk[i] != ASCII_CHAR_NL && byteCounter != ret_key-1) {
-                    printf("START%cSTOP",buffChk[i]);
+                    perror("INADEQUATE TEXT FILE");
                     return -1; 
                 }
             }
@@ -80,21 +79,19 @@ int enc_client_process(int fd_txt, int fd_key, int socket)
     }
     lseek(fd_key,0,SEEK_SET);
 
-
-    //DEBUGGING NEED TO ADD ITOA
     // send information to server
     memset(buffChk, '\0', BUFFSIZE);
-    buffChk[0] = DELIM_KEY;
+    strcpy(&buffChk[0], DELIM_STR);
     int len = 1;
-    sprintf(&buffChk[1], "%i", ret_txt);
-    len = strlen(buffChk) + 1;
+    sprintf(&buffChk[len], "%i", ret_plain);
+    len = strlen(buffChk);
     strcpy(&buffChk[len], DELIM_STR);
-    len += 1;
+    len = strlen(buffChk);
     sprintf(&buffChk[len], "%i",ret_key);
-    len = strlen(buffChk) + 1;
+    len = strlen(buffChk);
     strcpy(&buffChk[len], DELIM_STR);
 
-    int charsWritten = send(socket, buffChk, strlen(buffChk), 0);
+    int charsWritten = send(fd_socket, buffChk, strlen(buffChk), 0);
     if (charsWritten < 0) {
         perror("CLIENT: ERROR writing to socket");
         return -1;

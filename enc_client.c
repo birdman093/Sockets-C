@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
     // Client Socket and Addressing
     int sd_client = socket(AF_INET, SOCK_STREAM, 0);
     if (sd_client == -1) {
-        printf("CLIENT: ERROR, creating Socket\n");
+        perror("CLIENT: ERROR, creating Socket\n");
         return EXIT_FAILURE;
     }
     struct sockaddr_in clientAddress;
@@ -61,6 +61,7 @@ int main(int argc, char *argv[])
     int ret_Conn = connect(sd_client, (struct sockaddr*)&clientAddress, sizeof(clientAddress));
     if (ret_Conn < 0) {
         perror("CLIENT: ERROR connecting");
+        return EXIT_FAILURE;
     }
 
     // Server Connection Validation Receive:  check server name
@@ -119,7 +120,7 @@ int main(int argc, char *argv[])
     // at end to signify change of input
     charsWritten = send(sd_client, DELIM_STR, 1, 0);
     if (charsWritten < 0) {
-        perror("CLIENT: ERROR sending stop message to socket");
+        perror("CLIENT: ERROR sending start message to socket");
         return -1;
     }
     int ret_send_pt = enc_client_send(fd_plaintext, sd_client); 
@@ -132,24 +133,23 @@ int main(int argc, char *argv[])
     }
 
     // receive processed data from server  -- search for & to find stop signal
-    memset(buffer, '\0', sizeof(buffer));
     bool stopSignal = false;
     while (!stopSignal) {
+        memset(buffer, '\0', sizeof(buffer));
         charsRead = recv(sd_client, buffer, BUFFSIZE - 1, 0);
         if (charsRead < 0){
             perror("CLIENT: ERROR reading from socket");
             exit(1);
         } 
+        fflush(stdout);
         printf("%s",buffer);
 
         // check for stop Signal
         for (int i = 0; i < strlen(buffer); i++) {
-            if (buffer[i] == DELIM_KEY) {
+            if (strcmp(&buffer[i], DELIM_STR) == 0) {
                 stopSignal = true; 
             }
         }
-
-        memset(buffer, '\0', sizeof(buffer));
     }
     printf("\n");
     

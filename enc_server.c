@@ -18,8 +18,10 @@
 #define BUFFSIZE 256
 #define ENC_SERVER_STRING "enc_server"
 #define ERROR_KEY '!'
+#define ERROR_STR "!"
 #define DELIM_KEY '@'
 #define DELIM_STR "@"
+#define ASCII_ZERO 48
 
 char enc_server_encrypt(char, char);
 
@@ -98,7 +100,7 @@ int main(int argc, char *argv[])
             connectSocket = accept(sd_listen, (struct sockaddr *)&clientAddress, &clientSize);
             if (connectSocket < 0) {
                 perror("ERROR on accept");
-                return EXIT_FAILURE;
+                continue;
             }
 
             // FOR TESTING ONLY: Display client info
@@ -117,40 +119,36 @@ int main(int argc, char *argv[])
             // Server Connection Validation Receive: close socket if invalid and continue accepting new clients
             memset(buffer, '\0', BUFFSIZE);
             charsRead = recv(connectSocket, buffer, BUFFSIZE-1, 0); 
-            if (charsRead < 0 || buffer[0] == ERROR_KEY) {
+            if (charsRead < 0 || (strncmp(&buffer[0],ERROR_STR,1) == 0)) {
                 perror("ERROR receiving validation message from socket");
                 close(connectSocket);
                 continue;
             }
-            // TESTING NOTES: & should be received by client here
 
             // Keyfile/ PlainText File Validation: Receive file sizes from client, allocate buffers
             memset(buffer, '\0', BUFFSIZE);
             charsRead = recv(connectSocket, buffer, BUFFSIZE-1, 0); 
-            andCount = 0;
-            plainSize = 0;
-            keySize = 0;
+            andCount = 0; plainSize = 0; keySize = 0;
             for (int i = 0; i < strlen(buffer); i++) {
                 if (buffer[i] == DELIM_KEY) {
                     andCount++;
                 } else if (andCount == 1) {
-                    plainSize = plainSize * 10 + atoi(&buffer[i]);
+                    plainSize = plainSize * 10 + (int)buffer[i] - ASCII_ZERO;
                 } else if (andCount == 2) {
-                    keySize = keySize * 10 +atoi(&buffer[i]);
+                    keySize = keySize * 10 + (int)buffer[i] - ASCII_ZERO;
                 }
             }
             keyBuffer = calloc(keySize + 3, sizeof(char));
             plainBuffer = calloc(plainSize + 3, sizeof(char));
 
             // DataTransfer Receive:  Receive plaintext files and keyfiles with delimiters
-            memset(buffer, '\0', BUFFSIZE);
-            charsRead = recv(connectSocket, buffer, BUFFSIZE-1, 0); 
             andCount = 0; plainIdx = 0; keyIdx = 0;
-            charsWritten = 1;
-            while (charsWritten > 0 && andCount < 3) {
+            charsRead = 1;
+            while (charsRead > 0 && andCount < 3) {
+                memset(buffer, '\0', BUFFSIZE);
                 charsRead = recv(connectSocket, buffer, BUFFSIZE-1, 0); 
                 for (int i = 0; i < strlen(buffer); i++) {
-                    if (buffer[i] == DELIM_KEY) {
+                    if (strcmp(&buffer[i], DELIM_STR) == 0) {
                         andCount++;
                     } else if (andCount == 1) {
                         plainBuffer[plainIdx] = buffer[i];
@@ -158,50 +156,68 @@ int main(int argc, char *argv[])
                     } else if (andCount == 2) {
                         keyBuffer[plainIdx] = buffer[i];
                         keyIdx++; 
+                    } else {
+                        free(keyBuffer);
+                        free(plainBuffer);
+                        close(connectSocket);
+                        continue;
                     }
                 }
-            } 
-
+            }
+            
+            printf("VALUE: %i\n", (int)strlen(plainBuffer));
             // Process Data: Encryption
-            for (int i = 0; i < strlen(plainBuffer); i++) {
+            for (int i = 0; i < (int)strlen(plainBuffer); i++) {
                 plainBuffer[i] = enc_server_encrypt(plainBuffer[i], keyBuffer[i]);
+                fflush(stdout);
+                printf("VALUE: %c\n", plainBuffer[i]);
+                fflush(stdout);
             }
 
             //Process Data: Send Processed info back to client, send DELIM_KEY at end
             plainIdx = 0;
             plainRemain = plainSize;
-            while (plainIdx < plainSize) {
+            while (plainRemain > 0) {
                 memset(buffer, '\0', BUFFSIZE);
                 if (plainRemain > BUFFSIZE-1) {
                     strncpy(buffer, &plainBuffer[plainIdx], BUFFSIZE-1);
+                    plainIdx += BUFFSIZE-1;
                     plainRemain -= BUFFSIZE -1;
+                    
                 } else {
                     strncpy(buffer, &plainBuffer[plainIdx], plainRemain);
+                    plainIdx += plainRemain;
                     plainRemain -= plainRemain;
+                    
                 }
                 charsWritten = send(connectSocket, buffer, BUFFSIZE-1, 0);
                 if (charsWritten < 0){
-                    perror("ERROR writing validation message to socket");
-                    break;
+                    perror("ERROR writing encryption message to socket");
+                    free(keyBuffer);
+                    free(plainBuffer);
+                    close(connectSocket);
+                    continue;
                 } 
             }
+
             charsWritten = send(connectSocket, DELIM_STR, 1, 0);
             if (charsWritten < 0){
                 perror("ERROR sending stop message to socket");
+                continue;
             } 
-
-        
-            free(keyBuffer);
-            free(plainBuffer);
+            //free(keyBuffer);
+            //free(plainBuffer);
             close(connectSocket);
+
         }
-        close(sd_listen);
     }
     else {
         close(sd_listen);
         pause();
+        return EXIT_SUCCESS;
     }
 
+    close(sd_listen);
     return EXIT_SUCCESS;
 }
 

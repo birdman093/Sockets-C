@@ -18,24 +18,24 @@
 #define DELIM_KEY '@'
 #define DELIM_STR "@"
 
-int enc_client_send(int fd, int socket) 
+int enc_client_send(int fd_txt, int sd_client) 
 {
     //read text into buffer and send to server
     ssize_t nread;
     int charsWritten;
     char buffer[BUFFSIZE];
     memset(buffer, '\0', sizeof(buffer));
-    while ((nread = read(fd, buffer, BUFFSIZE-1)) > 0) {
-        charsWritten = send(socket, buffer, strlen(buffer), 0);
+    while ((nread = read(fd_txt, buffer, BUFFSIZE-1)) > 0) {
+        charsWritten = send(sd_client, buffer, strlen(buffer), 0);
         if (charsWritten < 0) {
             perror("CLIENT: ERROR writing to socket");
             return -1;
         }
         memset(buffer, '\0', sizeof(buffer));
     }
-    close(fd);
+    close(fd_txt);
     // Send Delimiter to signify break
-    charsWritten = send(socket, DELIM_STR, 1, 0);
+    charsWritten = send(sd_client, DELIM_STR, 1, 0);
     if (charsWritten < 0) {
         perror("CLIENT: ERROR sending stop message to socket");
         return -1;
