@@ -15,13 +15,14 @@
 
 #define BUFFSIZE 256
 #define MIN_ASCII 65
-#define MAX_CHARS 27
 #define MAX_ASCII 90
+#define MAX_CHARS 27
 #define ASCII_SPACE 32
-#define MAX_ASCII_CHAR 'Z'
-#define MIN_ASCII_CHAR 'A'
-#define ASCII_CHAR_SPACE ' '
-#define ASCII_CHAR_NL '\n'
+#define ASCII_NL 10
+//#define MAX_ASCII_CHAR 'Z'
+//#define MIN_ASCII_CHAR 'A'
+//#define ASCII_CHAR_SPACE ' '
+//#define ASCII_CHAR_NL '\n'
 #define DELIM_KEY '@'
 #define DELIM_STR "@"
 #define ZERO_ASCII 48
@@ -49,33 +50,34 @@ int enc_client_process(int fd_plain, int fd_key, int fd_socket)
     // sort through plain text characters for illegal characters.  
     char buffChk[BUFFSIZE];
     ssize_t nread2;
-    int byteCounter = 0; 
+    int byteCounter = 0;
+    memset(buffChk, '\0', sizeof(buffChk)); 
     while ((nread2 = read(fd_plain, buffChk, BUFFSIZE-1)) > 0) {
         for (int i = 0; i < strlen(buffChk); i++) {
             byteCounter ++;
-            if (buffChk[i] > MAX_ASCII_CHAR || (buffChk[i] < MIN_ASCII_CHAR && buffChk[i] != ASCII_CHAR_SPACE)) {
+            if (buffChk[i] > MAX_ASCII || (buffChk[i] < MIN_ASCII && buffChk[i] != ASCII_SPACE)) {
                 //if at end of text file and hit newline that is acceptable
-                if (buffChk[i] != ASCII_CHAR_NL && byteCounter != ret_plain-1) {
+                if (buffChk[i] != ASCII_NL && byteCounter != ret_plain-1) {
                     return -1; 
                 }
             }
         }
+        memset(buffChk, '\0', sizeof(buffChk));
     }
     lseek(fd_plain,0,SEEK_SET);
 
-    // sort through key text characters for illegal characters
+    // sort through key text characters for illegal characters, no newline characters in keyfile
     byteCounter = 0;
+    memset(buffChk, '\0', sizeof(buffChk));
     while ((nread2 = read(fd_key, buffChk, BUFFSIZE-1)) > 0) {
         for (int i = 0; i < strlen(buffChk); i++) {
             byteCounter ++;
-            if (buffChk[i] > MAX_ASCII_CHAR || (buffChk[i] < MIN_ASCII_CHAR && buffChk[i] != ASCII_CHAR_SPACE)) {
-                //if at end of text file and hit newline that is acceptable
-                if (buffChk[i] != ASCII_CHAR_NL && byteCounter != ret_key-1) {
-                    perror("INADEQUATE TEXT FILE");
-                    return -1; 
-                }
+            if (buffChk[i] > MAX_ASCII || (buffChk[i] < MIN_ASCII && buffChk[i] != ASCII_SPACE)) {
+                perror("INADEQUATE TEXT FILE");
+                return -1; 
             }
         }
+        memset(buffChk, '\0', sizeof(buffChk));
     }
     lseek(fd_key,0,SEEK_SET);
 
