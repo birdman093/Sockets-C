@@ -119,59 +119,112 @@ int main(int argc, char *argv[])
             // Server Connection Validation Receive: close socket if invalid and continue accepting new clients
             memset(buffer, '\0', BUFFSIZE);
             charsRead = recv(connectSocket, buffer, BUFFSIZE-1, 0); 
-            if (charsRead < 0 || (strncmp(&buffer[0],ERROR_STR,1) == 0)) {
+            if (charsRead < 0 || buffer[0] == ERROR_KEY) {
                 perror("ERROR receiving validation message from socket");
                 close(connectSocket);
                 continue;
             }
 
             // Keyfile/ PlainText File Validation: Receive file sizes from client, allocate buffers
+            int error = 0;
             memset(buffer, '\0', BUFFSIZE);
-            charsRead = recv(connectSocket, buffer, BUFFSIZE-1, 0); 
+            charsRead = recv(connectSocket, buffer, BUFFSIZE-1, 0);
+            if (charsRead < 0) {
+                perror("SERVER: error receiving file sizes from socket");
+                close(connectSocket);
+                continue;
+            } 
+            
             andCount = 0; plainSize = 0; keySize = 0;
+            int buffLength = strlen(buffer);
+            int lastIdx = 0;
             for (int i = 0; i < strlen(buffer); i++) {
-                if (buffer[i] == DELIM_KEY) {
+                if (andCount >= 3) {
+                    break;
+                } else if (buffer[i] == DELIM_KEY) {
                     andCount++;
                 } else if (andCount == 1) {
                     plainSize = plainSize * 10 + (int)buffer[i] - ASCII_ZERO;
                 } else if (andCount == 2) {
                     keySize = keySize * 10 + (int)buffer[i] - ASCII_ZERO;
+                } else {
+                    perror("SERVER: incorrect file format from client");
+                    close(connectSocket);
+                    error = 1;
+                    break;
                 }
+                lastIdx += 1;
+            }
+            if (error == 1) {
+                continue;
             }
             keyBuffer = calloc(keySize + 3, sizeof(char));
             plainBuffer = calloc(plainSize + 3, sizeof(char));
 
-            // DataTransfer Receive:  Receive plaintext files and keyfiles with delimiters
+            // DataTransfer Receive:  Leftovers between receive to be picked up here
             andCount = 0; plainIdx = 0; keyIdx = 0;
-            charsRead = 1;
-            while (charsRead > 0 && andCount < 3) {
-                memset(buffer, '\0', BUFFSIZE);
-                charsRead = recv(connectSocket, buffer, BUFFSIZE-1, 0); 
-                for (int i = 0; i < strlen(buffer); i++) {
-                    if (strcmp(&buffer[i], DELIM_STR) == 0) {
+            for (int i = lastIdx; i < buffLength; i++) {
+                    printf("%c", buffer[i]);
+                    if (buffer[i] == DELIM_KEY) {
                         andCount++;
                     } else if (andCount == 1) {
                         plainBuffer[plainIdx] = buffer[i];
                         plainIdx++; 
                     } else if (andCount == 2) {
-                        keyBuffer[plainIdx] = buffer[i];
+                        keyBuffer[keyIdx] = buffer[i];
                         keyIdx++; 
                     } else {
+                        perror("SERVER: Not receiving properly formated data from Client");
                         free(keyBuffer);
                         free(plainBuffer);
                         close(connectSocket);
-                        continue;
+                        error = 1;
+                        break;
+                    }
+            }
+
+
+            // DataTransfer Receive:  Receive plaintext files and keyfiles with delimiters
+            
+            charsRead = 1;
+            while (charsRead > 0 && andCount < 3) {
+                memset(buffer, '\0', BUFFSIZE);
+                charsRead = recv(connectSocket, buffer, BUFFSIZE-1, 0); 
+                if (charsRead <= 0) {
+                    perror("SERVER: error receiving plaintext and key files from socket\n");
+                    //free(keyBuffer);
+                    //free(plainBuffer);
+                    close(connectSocket);
+                    error = 1;
+                    break;
+                }
+
+                for (int i = 0; i < strlen(buffer); i++) {
+                    if (buffer[i] == DELIM_KEY) {
+                        andCount++;
+                    } else if (andCount == 1) {
+                        plainBuffer[plainIdx] = buffer[i];
+                        plainIdx++; 
+                    } else if (andCount == 2) {
+                        keyBuffer[keyIdx] = buffer[i];
+                        keyIdx++; 
+                    } else {
+                        perror("SERVER: Not receiving properly formated data from Client");
+                        free(keyBuffer);
+                        free(plainBuffer);
+                        close(connectSocket);
+                        error = 1;
+                        break;
                     }
                 }
             }
-            
-            printf("VALUE: %i\n", (int)strlen(plainBuffer));
+            if (error == 1) {
+                continue;
+            }
+
             // Process Data: Encryption
-            for (int i = 0; i < (int)strlen(plainBuffer); i++) {
+            for (int i = 0; i < strlen(plainBuffer); i++) {
                 plainBuffer[i] = enc_server_encrypt(plainBuffer[i], keyBuffer[i]);
-                fflush(stdout);
-                printf("VALUE: %c\n", plainBuffer[i]);
-                fflush(stdout);
             }
 
             //Process Data: Send Processed info back to client, send DELIM_KEY at end

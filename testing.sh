@@ -1,6 +1,6 @@
 #!/bin/bash
-pkill enc_server
-reset
+#pkill enc_server
+#reset
 portNum=58927
 keyLength=100 
 keygen $keyLength > keyfile

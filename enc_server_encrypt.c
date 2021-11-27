@@ -15,8 +15,8 @@
 
 #define BUFFSIZE 256
 #define MIN_ASCII 65
-#define MAX_CHARS 27
 #define MAX_ASCII 90
+#define MAX_CHARS 27
 #define ASCII_SPACE 32
 #define MAX_ASCII_CHAR 'Z'
 #define MIN_ASCII_CHAR 'A'
@@ -26,27 +26,38 @@
 // return size of file, return -1 on error
 char enc_server_encrypt(char plainChar, char keyChar) 
 {
-    char buffConv;
-
-    // convert to raw number from 0 to 27
+    // convert input Char to raw number from 0 to 26
     int inpChar;
-    if (plainChar == ASCII_SPACE) {
-        inpChar = MAX_ASCII - MIN_ASCII;
+    if ((int)plainChar == ASCII_SPACE) {
+        // 26
+        inpChar = 26;
     } else {
+        // 0 to 25
         inpChar = (int)plainChar - MIN_ASCII;
     }
 
-    // encrypt to number from 0 to 27
-    inpChar += (int)keyChar;
+    // convert key Char to raw number from 0 to 26
+    int inpKey;
+    if ((int)keyChar == ASCII_SPACE) {
+        // 26
+        inpKey = 26;
+    } else {
+        // 0 to 25
+        inpKey = (int)keyChar - MIN_ASCII;
+    }
+
+    // encrypt to number from 0 to 26
+    inpChar += inpKey;
     inpChar = inpChar % MAX_CHARS;
 
     // convert to ASCII character
-    inpChar += MIN_ASCII;
-    if (inpChar > MAX_ASCII) {
+    if (inpChar == 26) {
         inpChar = ASCII_SPACE;
+    } else {
+        inpChar += MIN_ASCII;
     }
-    buffConv = (char)inpChar;
-    return buffConv;
+
+    return (char)inpChar;
 }
 
 

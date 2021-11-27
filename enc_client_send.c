@@ -26,6 +26,9 @@ int enc_client_send(int fd_txt, int sd_client)
     char buffer[BUFFSIZE];
     memset(buffer, '\0', sizeof(buffer));
     while ((nread = read(fd_txt, buffer, BUFFSIZE-1)) > 0) {
+        if (buffer[strlen(buffer)-1] == '\n') {
+            buffer[strlen(buffer)-1] = ' ';
+        }
         charsWritten = send(sd_client, buffer, strlen(buffer), 0);
         if (charsWritten < 0) {
             perror("CLIENT: ERROR writing to socket");

@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    // Plain Text and Key File Validation: Send key and plaintext to server, send DELIM_KEY to start, in between,  
+    // Data Transfer: Send key and plaintext to server, send DELIM_KEY to start, in between,  
     // at end to signify change of input
     charsWritten = send(sd_client, DELIM_STR, 1, 0);
     if (charsWritten < 0) {
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    // receive processed data from server  -- search for & to find stop signal
+    // Receive Data Transfer: receive processed data from server  -- search for & to find stop signal
     bool stopSignal = false;
     while (!stopSignal) {
         memset(buffer, '\0', sizeof(buffer));
@@ -141,13 +141,15 @@ int main(int argc, char *argv[])
             perror("CLIENT: ERROR reading from socket");
             exit(1);
         } 
-        fflush(stdout);
-        printf("%s",buffer);
+        
 
         // check for stop Signal
         for (int i = 0; i < strlen(buffer); i++) {
             if (strcmp(&buffer[i], DELIM_STR) == 0) {
                 stopSignal = true; 
+            } else {
+                fflush(stdout);
+                printf("%c",buffer[i]);
             }
         }
     }
