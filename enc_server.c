@@ -29,17 +29,17 @@ int main(int argc, char *argv[])
 {
     // Handle invalid input: too many inputs
     if (argc > 2) {
-        printf("Too Many arguments\n");
+        perror("SERVER: Too Many arguments\n");
         return EXIT_FAILURE;
     } else if (argc == 1) {
-        printf("Please give me a port!\n");
+        perror("SERVER: Please give me a port!\n");
         return EXIT_FAILURE;
     }
 
     // Server Socket and Addressing
     int sd_listen = socket(AF_INET, SOCK_STREAM, 0);
     if (sd_listen == -1) {
-        printf("Error creating Socket\n");
+        perror("SERVER: Error creating Socket\n");
         return EXIT_FAILURE;
     }
     struct sockaddr_in sd_address;
@@ -51,14 +51,14 @@ int main(int argc, char *argv[])
     // bind socket to input port
     int ret_Bind = bind(sd_listen, (struct sockaddr *)&sd_address, sizeof(sd_address));
     if (ret_Bind == -1) {
-        perror("Error binding to Port\n");
-        exit(1);
+        perror("SERVER: Error binding to Port\n");
+        return EXIT_FAILURE;
     }
 
     // all children listen on same socket for requests.  Initialize before forking.
     int ret_Listen = listen(sd_listen, 5);
     if (ret_Listen == -1) {
-        printf("Error Listening\n");
+        perror("SERVER: Error Listening\n");
         return EXIT_FAILURE;
     }
 
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
     for (int i = 0; i < MAXCONN; i++) {
         newProcess = fork();
         if (newProcess == -1) {
-            printf("Invalid Fork--New Process did not fork\n");
+            perror("SERVER: Invalid Fork--New Process did not fork\n");
             return EXIT_FAILURE;
         } else if (newProcess == 0) {
             //child process does not fork(), break from loop
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
             // accept new clients, OS to determine which child process will gain access to client socket fd
             connectSocket = accept(sd_listen, (struct sockaddr *)&clientAddress, &clientSize);
             if (connectSocket < 0) {
-                perror("ERROR on accept");
+                perror("SERVER: ERROR accepting client");
                 continue;
             }
 
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
             // Server Connection Validation Send: send client server name for client error checking
             charsWritten = send(connectSocket, ENC_SERVER_STRING, 11, 0); 
             if (charsWritten < 0){
-                perror("ERROR writing validation message to socket");
+                perror("SERVER: ERROR writing validation message to socket");
                 close(connectSocket);
                 continue;
             }
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
             memset(buffer, '\0', BUFFSIZE);
             charsRead = recv(connectSocket, buffer, BUFFSIZE-1, 0); 
             if (charsRead < 0 || buffer[0] == ERROR_KEY) {
-                perror("ERROR receiving validation message from socket");
+                perror("SERVER: ERROR receiving validation message from socket");
                 close(connectSocket);
                 continue;
             }
@@ -163,6 +163,13 @@ int main(int argc, char *argv[])
 
             // DataTransfer Receive:  Leftovers between receive to be picked up here
             andCount = 0; plainIdx = 0; keyIdx = 0;
+            char* ret = NULL;
+            int lastPlain = plainIdx;
+            int lastKey = keyIdx;
+            int lastAnd = andCount;
+            if ((ret = strstr(buffer,ERROR_STR)) != NULL) {
+                    lastIdx = (int)(ret-&buffer[0]) + 1;
+            }
             for (int i = lastIdx; i < buffLength; i++) {
                     printf("%c", buffer[i]);
                     if (buffer[i] == DELIM_KEY) {
@@ -185,9 +192,13 @@ int main(int argc, char *argv[])
 
 
             // DataTransfer Receive:  Receive plaintext files and keyfiles with delimiters
-            
+            lastPlain = plainIdx;
+            lastKey = keyIdx;
+            lastAnd = andCount;
+            int bufferStart = 0;
             charsRead = 1;
             while (charsRead > 0 && andCount < 3) {
+
                 memset(buffer, '\0', BUFFSIZE);
                 charsRead = recv(connectSocket, buffer, BUFFSIZE-1, 0); 
                 if (charsRead <= 0) {
@@ -199,7 +210,20 @@ int main(int argc, char *argv[])
                     break;
                 }
 
-                for (int i = 0; i < strlen(buffer); i++) {
+                // Check for Error string from client
+                if((ret = strstr(buffer,ERROR_STR)) != NULL) {
+                    plainIdx = lastPlain;
+                    keyIdx = lastKey;
+                    andCount = lastAnd;
+                    bufferStart = (int)(ret-&buffer[0]) + 1;
+                } else {
+                    lastPlain = plainIdx;
+                    lastKey = keyIdx;
+                    lastAnd = andCount;
+                    bufferStart = 0;
+                }
+
+                for (int i = bufferStart; i < strlen(buffer); i++) {
                     if (buffer[i] == DELIM_KEY) {
                         andCount++;
                     } else if (andCount == 1) {

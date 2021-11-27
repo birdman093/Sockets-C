@@ -15,6 +15,7 @@
 
 #define BUFFSIZE 256
 #define ERROR_KEY '!'
+#define ERROR_STR "!"
 #define DELIM_KEY '@'
 #define DELIM_STR "@"
 
@@ -27,22 +28,35 @@ int enc_client_send(int fd_txt, int sd_client)
     memset(buffer, '\0', sizeof(buffer));
     while ((nread = read(fd_txt, buffer, BUFFSIZE-1)) > 0) {
         if (buffer[strlen(buffer)-1] == '\n') {
-            buffer[strlen(buffer)-1] = ' ';
+            buffer[strlen(buffer)-1] = DELIM_KEY;
         }
         charsWritten = send(sd_client, buffer, strlen(buffer), 0);
         if (charsWritten < 0) {
             perror("CLIENT: ERROR writing to socket");
             return -1;
         }
+        // Handles insufficient character writing error to server 
+        if (charsWritten != strlen(buffer)) {
+            while (charsWritten != strlen(buffer)) {
+                // send error message to notify server
+                charsWritten = send(sd_client, ERROR_STR, 1, 0);
+                if (charsWritten < 0) {
+                    perror("CLIENT: ERROR sending start message to socket");
+                    return -1;
+                }
+
+                // resend the message
+                charsWritten = send(sd_client, buffer, strlen(buffer), 0);
+                if (charsWritten < 0) {
+                    perror("CLIENT: ERROR writing to socket");
+                return -1;
+                } 
+            }
+        }
+            
         memset(buffer, '\0', sizeof(buffer));
     }
     close(fd_txt);
-    // Send Delimiter to signify break
-    charsWritten = send(sd_client, DELIM_STR, 1, 0);
-    if (charsWritten < 0) {
-        perror("CLIENT: ERROR sending stop message to socket");
-        return -1;
-    }
     return 0;
     
 }

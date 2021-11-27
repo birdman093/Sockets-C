@@ -33,10 +33,10 @@ int main(int argc, char *argv[])
 {
     // Handle invalid input: too many or too few inputs
     if (argc > 4) {
-        printf("Too Many arguments\n");
+        perror("CLIENT: Too Many arguments\n");
         return EXIT_FAILURE;
     } else if (argc != 4) {
-        printf("Not enough arguments!\n");
+        perror("CLIENT: Not enough arguments!\n");
         return EXIT_FAILURE;
     }
 
@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
     // Create connection to ENC_Server socket
     int ret_Conn = connect(sd_client, (struct sockaddr*)&clientAddress, sizeof(clientAddress));
     if (ret_Conn < 0) {
-        perror("CLIENT: ERROR connecting");
+        perror("CLIENT: ERROR connecting to server");
         return EXIT_FAILURE;
     }
 
@@ -118,6 +118,7 @@ int main(int argc, char *argv[])
 
     // Data Transfer: Send key and plaintext to server, send DELIM_KEY to start, in between,  
     // at end to signify change of input
+    // NOTE: enc_client_send will insert delimiter key into plaintext file but not keyfile
     charsWritten = send(sd_client, DELIM_STR, 1, 0);
     if (charsWritten < 0) {
         perror("CLIENT: ERROR sending start message to socket");
@@ -125,11 +126,18 @@ int main(int argc, char *argv[])
     }
     int ret_send_pt = enc_client_send(fd_plaintext, sd_client); 
     if (ret_send_pt < 0){
+        perror("CLIENT: ERROR sending keyfile to socket");
         exit(1);
     }
     int ret_send_key = enc_client_send(fd_keyfile, sd_client); 
     if (ret_send_key < 0){
+        perror("CLIENT: ERROR sending keyfile to socket");
         exit(1);
+    }
+    charsWritten = send(sd_client, DELIM_STR, 1, 0);
+    if (charsWritten < 0) {
+        perror("CLIENT: ERROR sending start message to socket");
+        return -1;
     }
 
     // Receive Data Transfer: receive processed data from server  -- search for & to find stop signal
@@ -153,6 +161,7 @@ int main(int argc, char *argv[])
             }
         }
     }
+    // add new line character to output
     printf("\n");
     
     
