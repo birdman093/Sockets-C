@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
         currChar = (char)randoNum;
         printf("%c", currChar);
     }
-    //
+    printf("\n");
 
     return EXIT_SUCCESS;
 }

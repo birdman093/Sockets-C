@@ -32,7 +32,7 @@ int enc_client_send(int fd_txt, int sd_client)
         }
         charsWritten = send(sd_client, buffer, strlen(buffer), 0);
         if (charsWritten < 0) {
-            perror("CLIENT: ERROR writing to socket");
+            perror("CLIENT: ERROR writing file data to server");
             return -1;
         }
         // Handles insufficient character writing error to server 
@@ -41,14 +41,14 @@ int enc_client_send(int fd_txt, int sd_client)
                 // send error message to notify server
                 charsWritten = send(sd_client, ERROR_STR, 1, 0);
                 if (charsWritten < 0) {
-                    perror("CLIENT: ERROR sending start message to socket");
+                    perror("CLIENT: ERROR sending data to socket after insufficient amount receieved by server");
                     return -1;
                 }
 
                 // resend the message
                 charsWritten = send(sd_client, buffer, strlen(buffer), 0);
                 if (charsWritten < 0) {
-                    perror("CLIENT: ERROR writing to socket");
+                    perror("CLIENT: ERROR sending data to socket after insufficient amount receieved by server");
                 return -1;
                 } 
             }

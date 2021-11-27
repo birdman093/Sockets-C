@@ -25,6 +25,7 @@
 #define ERROR_KEY '!'
 #define DELIM_KEY '@'
 #define DELIM_STR "@"
+#define ABORT_STR "$"
 
 int enc_client_process(int, int, int); 
 int enc_client_send(int, int);
@@ -109,7 +110,11 @@ int main(int argc, char *argv[])
     // Plain Text and Key File Validation: Check for invalid characters, key file length greater than plaintext
     int ret_process = enc_client_process(fd_plaintext, fd_keyfile, sd_client);
     if (ret_process < 0) {
-        perror("CLIENT: ERROR, processing plaintext and keytext files");
+        charsWritten = send(sd_client, ABORT_STR, 1, 0);
+        if (charsWritten < 0) {
+            perror("CLIENT: ERROR notifying server of inadequate keyfile or plaintext file");
+            exit(2);
+        }
         close(fd_plaintext);
         close(fd_keyfile);
         close(sd_client); 

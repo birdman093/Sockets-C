@@ -9,19 +9,17 @@ key20 exists!
 
 #-----------------------------------------
 #5 POINTS: Number of characters in key20, should be 21:
-20 key20
+21 key20
 
 #-----------------------------------------
 #keygen 70000 > key70000
 #5 POINTS: Number of characters in key70000, should be 70001:
-70000 key70000
+70001 key70000
 
 #-----------------------------------------
 #enc_client plaintext1 key20 $encport
 #10 POINTS: Should return error about too-short key
-CLIENT: ERROR, processing plaintext and keytext files: Success
-SERVER: error receiving plaintext and key files from socket
-: Success
+CLIENT: ERROR plain text file longer than key file: Success
 
 #-----------------------------------------
 #enc_client plaintext1 key70000 $encport
@@ -72,50 +70,48 @@ plaintext1_a exists!
 #20 POINTS: concurrent test of encryption - look for 4 properly-sized ciphertext# files, or 5 where the 5th is 0 bytes
 #5 POINTS: Should be only one error about plaintext5 being bad
 Ten second sleep, your program must complete in this time
-CLIENT: ERROR, processing plaintext and keytext files: Success
-SERVER: error receiving plaintext and key files from socket
-: Invalid argument
-total 2960
-drwxrwx---. 4 featheru upg16973  1342 Nov 27 12:27 ./
+CLIENT: ERROR invalid characters in plain text file: Success
+total 2984
+drwxrwx---. 4 featheru upg16973  1342 Nov 27 12:59 ./
 drwxrwx---. 6 featheru upg16973    88 Nov 20 20:31 ../
--rw-rw----. 1 featheru upg16973    37 Nov 27 12:27 ciphertext1
--rw-rw----. 1 featheru upg16973   317 Nov 27 12:27 ciphertext2
--rw-rw----. 1 featheru upg16973    17 Nov 27 12:27 ciphertext3
--rw-rw----. 1 featheru upg16973 69333 Nov 27 12:27 ciphertext4
--rw-rw----. 1 featheru upg16973     0 Nov 27 12:27 ciphertext5
+-rw-rw----. 1 featheru upg16973    37 Nov 27 12:59 ciphertext1
+-rw-rw----. 1 featheru upg16973   317 Nov 27 12:59 ciphertext2
+-rw-rw----. 1 featheru upg16973    17 Nov 27 12:59 ciphertext3
+-rw-rw----. 1 featheru upg16973 69333 Nov 27 12:59 ciphertext4
+-rw-rw----. 1 featheru upg16973     0 Nov 27 12:59 ciphertext5
 -rw-rw----. 1 featheru upg16973   378 Nov 27 10:33 compileall.sh
--rwxrwx---. 1 featheru upg16973 19784 Nov 27 10:48 dec_client
--rw-rw----. 1 featheru upg16973  5525 Nov 27 10:26 dec_client.c
--rwxrwx---. 1 featheru upg16973 17360 Nov 27 10:48 dec_server
--rw-rw----. 1 featheru upg16973 10827 Nov 27 10:43 dec_server.c
+-rwxrwx---. 1 featheru upg16973 19808 Nov 27 12:59 dec_client
+-rw-rw----. 1 featheru upg16973  5688 Nov 27 12:55 dec_client.c
+-rwxrwx---. 1 featheru upg16973 17400 Nov 27 12:59 dec_server
+-rw-rw----. 1 featheru upg16973 11089 Nov 27 12:55 dec_server.c
 -rw-rw----. 1 featheru upg16973  1467 Nov 27 10:41 dec_server_decrypt.c
 -rw-rw----. 1 featheru upg16973    37 Nov 27 10:49 dectxt1
 -rw-rw----. 1 featheru upg16973   317 Nov 27 10:49 dectxt2
 -rw-rw----. 1 featheru upg16973    17 Nov 27 10:49 dectxt3
 -rw-rw----. 1 featheru upg16973 69333 Nov 27 10:49 dectxt4
 -rw-rw----. 1 featheru upg16973     0 Nov 27 10:48 dectxt5
--rwxrwx---. 1 featheru upg16973 19784 Nov 27 10:48 enc_client
--rw-rw----. 1 featheru upg16973  5531 Nov 27 09:04 enc_client.c
--rw-rw----. 1 featheru upg16973  2922 Nov 27 10:03 enc_client_process.c
--rw-rw----. 1 featheru upg16973  1815 Nov 27 08:04 enc_client_send.c
--rwxrwx---. 1 featheru upg16973 17352 Nov 27 10:48 enc_server
--rw-rw----. 1 featheru upg16973 10799 Nov 27 09:00 enc_server.c
+-rwxrwx---. 1 featheru upg16973 19800 Nov 27 12:59 enc_client
+-rw-rw----. 1 featheru upg16973  5432 Nov 27 12:48 enc_client.c
+-rw-rw----. 1 featheru upg16973  3302 Nov 27 12:58 enc_client_process.c
+-rw-rw----. 1 featheru upg16973  1913 Nov 27 12:46 enc_client_send.c
+-rwxrwx---. 1 featheru upg16973 17392 Nov 27 12:59 enc_server
+-rw-rw----. 1 featheru upg16973 11068 Nov 27 12:52 enc_server.c
 -rw-rw----. 1 featheru upg16973  1337 Nov 26 20:28 enc_server_encrypt.c
 -rw-rw----. 1 featheru upg16973    37 Nov 27 10:49 enctxt1
 -rw-rw----. 1 featheru upg16973   317 Nov 27 10:49 enctxt2
 -rw-rw----. 1 featheru upg16973    17 Nov 27 10:49 enctxt3
 -rw-rw----. 1 featheru upg16973 69333 Nov 27 10:49 enctxt4
 -rw-rw----. 1 featheru upg16973     0 Nov 27 10:49 enctxt5
-drwxrwx---. 8 featheru upg16973   325 Nov 27 12:27 .git/
+drwxrwx---. 8 featheru upg16973   325 Nov 27 12:56 .git/
 -rw-rw----. 1 featheru upg16973   155 Nov 27 11:04 .gitignore
--rw-rw----. 1 featheru upg16973    93 Nov 27 12:27 grading.sh
--rw-rw----. 1 featheru upg16973    20 Nov 27 12:27 key20
--rw-rw----. 1 featheru upg16973 70000 Nov 27 12:27 key70000
+-rw-rw----. 1 featheru upg16973    93 Nov 27 12:59 grading.sh
+-rw-rw----. 1 featheru upg16973    21 Nov 27 12:59 key20
+-rw-rw----. 1 featheru upg16973 70001 Nov 27 12:59 key70000
 -rw-rw----. 1 featheru upg16973 70000 Nov 27 10:49 keyfile
--rwxrwx---. 1 featheru upg16973  9816 Nov 27 10:48 keygen
--rw-rw----. 1 featheru upg16973  1234 Nov 20 13:36 keygen.c
+-rwxrwx---. 1 featheru upg16973  9816 Nov 27 12:59 keygen
+-rw-rw----. 1 featheru upg16973  1252 Nov 27 12:41 keygen.c
 -rw-rw----. 1 featheru upg16973    51 Nov 27 10:50 kill.sh
--rw-rw----. 1 featheru upg16973  2728 Nov 27 12:27 mytestresults
+-rw-rw----. 1 featheru upg16973  2574 Nov 27 12:59 mytestresults
 -rwxrwx---. 1 featheru upg16973  5388 Nov 27 10:51 p5testscript
 -rw-rw----. 1 featheru upg16973    37 Nov 20 13:16 plaintext1
 -rw-rw----. 1 featheru upg16973   317 Nov 20 20:31 plaintext2
@@ -131,55 +127,55 @@ drwxrwx---. 2 featheru upg16973    99 Nov 20 09:24 .vscode/
 #15 POINTS: concurrent test of decryption - look for 4 plaintext#_a files that match the plaintext# files
 #Ten second sleep, your program must complete in this time
 total 3608
-drwxrwx---. 4 featheru upg16973  1462 Nov 27 12:27 ./
+drwxrwx---. 4 featheru upg16973  1462 Nov 27 12:59 ./
 drwxrwx---. 6 featheru upg16973    88 Nov 20 20:31 ../
--rw-rw----. 1 featheru upg16973    37 Nov 27 12:27 ciphertext1
--rw-rw----. 1 featheru upg16973   317 Nov 27 12:27 ciphertext2
--rw-rw----. 1 featheru upg16973    17 Nov 27 12:27 ciphertext3
--rw-rw----. 1 featheru upg16973 69333 Nov 27 12:27 ciphertext4
--rw-rw----. 1 featheru upg16973     0 Nov 27 12:27 ciphertext5
+-rw-rw----. 1 featheru upg16973    37 Nov 27 12:59 ciphertext1
+-rw-rw----. 1 featheru upg16973   317 Nov 27 12:59 ciphertext2
+-rw-rw----. 1 featheru upg16973    17 Nov 27 12:59 ciphertext3
+-rw-rw----. 1 featheru upg16973 69333 Nov 27 12:59 ciphertext4
+-rw-rw----. 1 featheru upg16973     0 Nov 27 12:59 ciphertext5
 -rw-rw----. 1 featheru upg16973   378 Nov 27 10:33 compileall.sh
--rwxrwx---. 1 featheru upg16973 19784 Nov 27 10:48 dec_client
--rw-rw----. 1 featheru upg16973  5525 Nov 27 10:26 dec_client.c
--rwxrwx---. 1 featheru upg16973 17360 Nov 27 10:48 dec_server
--rw-rw----. 1 featheru upg16973 10827 Nov 27 10:43 dec_server.c
+-rwxrwx---. 1 featheru upg16973 19808 Nov 27 12:59 dec_client
+-rw-rw----. 1 featheru upg16973  5688 Nov 27 12:55 dec_client.c
+-rwxrwx---. 1 featheru upg16973 17400 Nov 27 12:59 dec_server
+-rw-rw----. 1 featheru upg16973 11089 Nov 27 12:55 dec_server.c
 -rw-rw----. 1 featheru upg16973  1467 Nov 27 10:41 dec_server_decrypt.c
 -rw-rw----. 1 featheru upg16973    37 Nov 27 10:49 dectxt1
 -rw-rw----. 1 featheru upg16973   317 Nov 27 10:49 dectxt2
 -rw-rw----. 1 featheru upg16973    17 Nov 27 10:49 dectxt3
 -rw-rw----. 1 featheru upg16973 69333 Nov 27 10:49 dectxt4
 -rw-rw----. 1 featheru upg16973     0 Nov 27 10:48 dectxt5
--rwxrwx---. 1 featheru upg16973 19784 Nov 27 10:48 enc_client
--rw-rw----. 1 featheru upg16973  5531 Nov 27 09:04 enc_client.c
--rw-rw----. 1 featheru upg16973  2922 Nov 27 10:03 enc_client_process.c
--rw-rw----. 1 featheru upg16973  1815 Nov 27 08:04 enc_client_send.c
--rwxrwx---. 1 featheru upg16973 17352 Nov 27 10:48 enc_server
--rw-rw----. 1 featheru upg16973 10799 Nov 27 09:00 enc_server.c
+-rwxrwx---. 1 featheru upg16973 19800 Nov 27 12:59 enc_client
+-rw-rw----. 1 featheru upg16973  5432 Nov 27 12:48 enc_client.c
+-rw-rw----. 1 featheru upg16973  3302 Nov 27 12:58 enc_client_process.c
+-rw-rw----. 1 featheru upg16973  1913 Nov 27 12:46 enc_client_send.c
+-rwxrwx---. 1 featheru upg16973 17392 Nov 27 12:59 enc_server
+-rw-rw----. 1 featheru upg16973 11068 Nov 27 12:52 enc_server.c
 -rw-rw----. 1 featheru upg16973  1337 Nov 26 20:28 enc_server_encrypt.c
 -rw-rw----. 1 featheru upg16973    37 Nov 27 10:49 enctxt1
 -rw-rw----. 1 featheru upg16973   317 Nov 27 10:49 enctxt2
 -rw-rw----. 1 featheru upg16973    17 Nov 27 10:49 enctxt3
 -rw-rw----. 1 featheru upg16973 69333 Nov 27 10:49 enctxt4
 -rw-rw----. 1 featheru upg16973     0 Nov 27 10:49 enctxt5
-drwxrwx---. 8 featheru upg16973   325 Nov 27 12:27 .git/
+drwxrwx---. 8 featheru upg16973   325 Nov 27 12:56 .git/
 -rw-rw----. 1 featheru upg16973   155 Nov 27 11:04 .gitignore
--rw-rw----. 1 featheru upg16973    93 Nov 27 12:27 grading.sh
--rw-rw----. 1 featheru upg16973    20 Nov 27 12:27 key20
--rw-rw----. 1 featheru upg16973 70000 Nov 27 12:27 key70000
+-rw-rw----. 1 featheru upg16973    93 Nov 27 12:59 grading.sh
+-rw-rw----. 1 featheru upg16973    21 Nov 27 12:59 key20
+-rw-rw----. 1 featheru upg16973 70001 Nov 27 12:59 key70000
 -rw-rw----. 1 featheru upg16973 70000 Nov 27 10:49 keyfile
--rwxrwx---. 1 featheru upg16973  9816 Nov 27 10:48 keygen
--rw-rw----. 1 featheru upg16973  1234 Nov 20 13:36 keygen.c
+-rwxrwx---. 1 featheru upg16973  9816 Nov 27 12:59 keygen
+-rw-rw----. 1 featheru upg16973  1252 Nov 27 12:41 keygen.c
 -rw-rw----. 1 featheru upg16973    51 Nov 27 10:50 kill.sh
--rw-rw----. 1 featheru upg16973  6033 Nov 27 12:27 mytestresults
+-rw-rw----. 1 featheru upg16973  5879 Nov 27 12:59 mytestresults
 -rwxrwx---. 1 featheru upg16973  5388 Nov 27 10:51 p5testscript
 -rw-rw----. 1 featheru upg16973    37 Nov 20 13:16 plaintext1
--rw-rw----. 1 featheru upg16973    37 Nov 27 12:27 plaintext1_a
+-rw-rw----. 1 featheru upg16973    37 Nov 27 12:59 plaintext1_a
 -rw-rw----. 1 featheru upg16973   317 Nov 20 20:31 plaintext2
--rw-rw----. 1 featheru upg16973   317 Nov 27 12:27 plaintext2_a
+-rw-rw----. 1 featheru upg16973   317 Nov 27 12:59 plaintext2_a
 -rw-rw----. 1 featheru upg16973    17 Nov 20 20:31 plaintext3
--rw-rw----. 1 featheru upg16973    17 Nov 27 12:27 plaintext3_a
+-rw-rw----. 1 featheru upg16973    17 Nov 27 12:59 plaintext3_a
 -rw-rw----. 1 featheru upg16973 69333 Nov 20 20:31 plaintext4
--rw-rw----. 1 featheru upg16973 69333 Nov 27 12:27 plaintext4_a
+-rw-rw----. 1 featheru upg16973 69333 Nov 27 12:59 plaintext4_a
 -rw-rw----. 1 featheru upg16973    42 Nov 20 20:31 plaintext5
 -rw-rw----. 1 featheru upg16973     0 Nov 27 09:09 randotxt
 -rw-rw----. 1 featheru upg16973  4713 Nov 27 12:26 README.txt
@@ -188,7 +184,7 @@ drwxrwx---. 2 featheru upg16973    99 Nov 20 09:24 .vscode/
 
 #-----------------------------------------
 #Cleaning up - ignore Operation Not Permitted errors
-./p5testscript: line 141: 144216 Terminated              ./dec_server $decport
-./p5testscript: line 143: 144215 Terminated              ./enc_server $encport
+./p5testscript: line 141: 294243 Terminated              ./dec_server $decport
+./p5testscript: line 143: 294242 Terminated              ./enc_server $encport
 
 #SCRIPT COMPLETE

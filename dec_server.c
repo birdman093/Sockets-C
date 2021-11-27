@@ -22,6 +22,7 @@
 #define DELIM_KEY '@'
 #define DELIM_STR "@"
 #define ASCII_ZERO 48
+#define ABORT_STR "$"
 
 char dec_server_decrypt(char, char);
 
@@ -133,7 +134,14 @@ int main(int argc, char *argv[])
                 perror("SERVER: error receiving file sizes from socket");
                 close(connectSocket);
                 continue;
-            } 
+            }
+
+            //check for error from client by looking for abort message, 
+            char* abort;
+            if ((abort = strstr(buffer,ABORT_STR)) != NULL) {
+                close(connectSocket);
+                continue;
+            }  
             
             andCount = 0; plainSize = 0; keySize = 0;
             int buffLength = strlen(buffer);

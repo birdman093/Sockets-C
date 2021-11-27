@@ -21,6 +21,7 @@
 #define ERROR_STR "!"
 #define DELIM_KEY '@'
 #define DELIM_STR "@"
+#define ABORT_STR "$"
 #define ASCII_ZERO 48
 
 char enc_server_encrypt(char, char);
@@ -133,6 +134,13 @@ int main(int argc, char *argv[])
                 perror("SERVER: error receiving file sizes from socket");
                 close(connectSocket);
                 continue;
+            }
+
+            //check for error from client by looking for abort message, 
+            char* abort;
+            if ((abort = strstr(buffer,ABORT_STR)) != NULL) {
+                close(connectSocket);
+                continue;
             } 
             
             andCount = 0; plainSize = 0; keySize = 0;
@@ -148,7 +156,7 @@ int main(int argc, char *argv[])
                 } else if (andCount == 2) {
                     keySize = keySize * 10 + (int)buffer[i] - ASCII_ZERO;
                 } else {
-                    perror("SERVER: incorrect file format from client");
+                    perror("SERVER: Incorrect file size format sent by client");
                     close(connectSocket);
                     error = 1;
                     break;

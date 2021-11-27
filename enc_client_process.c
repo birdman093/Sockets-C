@@ -44,6 +44,7 @@ int enc_client_process(int fd_plain, int fd_key, int fd_socket)
     ret_key = key.st_size;
 
     if (ret_key < ret_plain) {
+        perror("CLIENT: ERROR plain text file longer than key file");
         return -1;
     }
 
@@ -58,6 +59,7 @@ int enc_client_process(int fd_plain, int fd_key, int fd_socket)
             if (buffChk[i] > MAX_ASCII || (buffChk[i] < MIN_ASCII && buffChk[i] != ASCII_SPACE)) {
                 //if at end of text file and hit newline that is acceptable
                 if (buffChk[i] != ASCII_NL && byteCounter != ret_plain-1) {
+                    perror("CLIENT: ERROR invalid characters in plain text file");
                     return -1; 
                 }
             }
@@ -73,8 +75,11 @@ int enc_client_process(int fd_plain, int fd_key, int fd_socket)
         for (int i = 0; i < strlen(buffChk); i++) {
             byteCounter ++;
             if (buffChk[i] > MAX_ASCII || (buffChk[i] < MIN_ASCII && buffChk[i] != ASCII_SPACE)) {
-                perror("INADEQUATE TEXT FILE");
-                return -1; 
+                //if at end of text file and hit newline that is acceptable
+                if (buffChk[i] != ASCII_NL && byteCounter != ret_key-1) {
+                    perror("CLIENT: ERROR invalid characters in key text file");
+                    return -1; 
+                }
             }
         }
         memset(buffChk, '\0', sizeof(buffChk));
@@ -95,7 +100,7 @@ int enc_client_process(int fd_plain, int fd_key, int fd_socket)
 
     int charsWritten = send(fd_socket, buffChk, strlen(buffChk), 0);
     if (charsWritten < 0) {
-        perror("CLIENT: ERROR writing to socket");
+        perror("CLIENT: ERROR writing file size information to socket");
         return -1;
     }
 
